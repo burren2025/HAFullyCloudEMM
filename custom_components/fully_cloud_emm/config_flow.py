@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -12,6 +13,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import FullyCloudAuthError, FullyCloudClient, FullyCloudError
 from .const import CONF_API_EMAIL, CONF_API_KEY, DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -39,9 +42,11 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await client.async_get_devices()
             except FullyCloudAuthError:
                 errors["base"] = "invalid_auth"
-            except FullyCloudError:
+            except FullyCloudError as err:
+                _LOGGER.warning("Fully Cloud setup failed: %s", err)
                 errors["base"] = "cannot_connect"
             except Exception:
+                _LOGGER.exception("Unexpected error during Fully Cloud setup")
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
@@ -59,4 +64,3 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
         )
-

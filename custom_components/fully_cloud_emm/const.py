@@ -13,7 +13,9 @@ CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = timedelta(minutes=5)
 DEFAULT_SCAN_INTERVAL_SECONDS = int(DEFAULT_SCAN_INTERVAL.total_seconds())
 
-API_BASE_URL = "https://api.fully-kiosk.com/cloud"
+API_BASE_URLS = (
+    "https://api.fully-kiosk.com/cloud",
+    "https://cloud.fully-kiosk.com/cloud",
+)
 
 PLATFORMS = ["binary_sensor", "sensor"]
-

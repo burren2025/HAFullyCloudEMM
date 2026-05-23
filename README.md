@@ -31,6 +31,8 @@ custom_components/fully_cloud_emm/
 
 Then check **Settings > System > Logs** for startup errors mentioning `fully_cloud_emm`.
 
+During setup, a failed credential test will log a line starting with `Fully Cloud setup failed:`. That line should show whether Home Assistant received an HTTP error, a non-JSON response, a timeout, or a network connection error.
+
 ## Notes
 
 Fully Cloud API credentials are entered through the Home Assistant config flow and stored by Home Assistant in its private config entry storage. Do not commit API keys, email addresses, or local Home Assistant secret files.
