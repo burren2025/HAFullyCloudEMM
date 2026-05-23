@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fully Cloud EMM",
+        "description": "Enter your Fully Cloud REST API credentials.",
+        "data": {
+          "api_email": "Fully Cloud account email",
+          "api_key": "Fully Cloud API access token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to Fully Cloud.",
+      "invalid_auth": "Fully Cloud rejected the email or API token.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Fully Cloud account is already configured."
+    }
+  }
+}
+
