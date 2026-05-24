@@ -48,7 +48,7 @@ Fully Cloud EMM provides these Home Assistant actions:
 - `fully_cloud_emm.restart_app`
 - `fully_cloud_emm.reboot_device`
 
-Both actions can target one or more Fully Cloud EMM devices from the automation UI. Home Assistant shows the friendly device name, and the integration uses the Fully device ID internally when it sends the command.
+Both actions include a **Fully Cloud EMM devices** field in the automation UI. Select one or more friendly Home Assistant device names there, and the integration uses the Fully device ID internally when it sends the command.
 
 The reboot command depends on Fully Kiosk device support and may require rooted/provisioned devices.
 

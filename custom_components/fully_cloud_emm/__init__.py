@@ -7,12 +7,12 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_DEVICE_ID, ATTR_ENTITY_ID
+from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers import device_registry as dr
 
 from .api import FullyCloudClient
 from .const import (
@@ -36,7 +36,6 @@ _LOGGER = logging.getLogger(__name__)
 COMMAND_SERVICE_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_DEVICE_ID): cv.ensure_list,
-        vol.Optional(ATTR_ENTITY_ID): cv.ensure_list,
         vol.Optional(ATTR_DEVID): cv.ensure_list,
         vol.Optional(ATTR_QUEUE_OFFLINE, default=False): cv.boolean,
         vol.Optional(ATTR_NOWAIT, default=True): cv.boolean,
@@ -139,16 +138,8 @@ def _command_service_handler(hass: HomeAssistant, command: str):
 def _fully_device_ids_from_service_call(
     hass: HomeAssistant, call: ServiceCall
 ) -> set[str]:
-    """Return Fully device IDs selected by HA device/entity target or direct devid."""
+    """Return Fully device IDs selected by HA device field or direct devid."""
     fully_device_ids = {str(device_id) for device_id in call.data.get(ATTR_DEVID, [])}
-    entity_registry = er.async_get(hass)
-
-    for entity_id in call.data.get(ATTR_ENTITY_ID, []):
-        entity_entry = entity_registry.async_get(entity_id)
-        if entity_entry and entity_entry.device_id:
-            fully_device_ids.update(
-                _fully_device_ids_from_ha_device(hass, entity_entry.device_id)
-            )
 
     for ha_device_id in call.data.get(ATTR_DEVICE_ID, []):
         fully_device_ids.update(_fully_device_ids_from_ha_device(hass, ha_device_id))

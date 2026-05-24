@@ -5,10 +5,15 @@ refresh:
 restart_app:
   name: Restart app
   description: Restart the Fully Kiosk app on selected devices.
-  target:
-    device:
-      integration: fully_cloud_emm
   fields:
+    device_id:
+      name: Fully Cloud EMM devices
+      description: Select one or more Fully Cloud EMM devices.
+      required: true
+      selector:
+        device:
+          integration: fully_cloud_emm
+          multiple: true
     queue_offline:
       name: Queue for offline devices
       description: Queue the command until offline devices come online.
@@ -25,10 +30,15 @@ restart_app:
 reboot_device:
   name: Reboot device
   description: Reboot selected devices. Fully requires rooted/provisioned devices for this command.
-  target:
-    device:
-      integration: fully_cloud_emm
   fields:
+    device_id:
+      name: Fully Cloud EMM devices
+      description: Select one or more Fully Cloud EMM devices.
+      required: true
+      selector:
+        device:
+          integration: fully_cloud_emm
+          multiple: true
     queue_offline:
       name: Queue for offline devices
       description: Queue the command until offline devices come online.
