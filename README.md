@@ -45,6 +45,7 @@ To refresh more frequently, create a Home Assistant automation that calls the `f
 
 Fully Cloud EMM provides these Home Assistant actions:
 
+- `fully_cloud_emm.refresh_device`
 - `fully_cloud_emm.restart_app`
 - `fully_cloud_emm.reboot_device`
 
@@ -52,7 +53,7 @@ Both actions include a **Fully Cloud EMM devices** field in the automation UI. S
 
 The reboot command depends on Fully Kiosk device support and may require rooted/provisioned devices.
 
-Command actions log accepted/successful responses at `INFO` level and failures at `WARNING` level. Routine hourly status polling is not logged on success.
+Command actions and device-targeted refreshes log outcomes at `WARNING` level so they appear in the default Home Assistant Core log. Routine hourly status polling is not logged on success.
 
 ## Notes
 

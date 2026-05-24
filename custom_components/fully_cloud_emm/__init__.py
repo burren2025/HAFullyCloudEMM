@@ -25,6 +25,7 @@ from .const import (
     PLATFORMS,
     SERVICE_REBOOT_DEVICE,
     SERVICE_REFRESH,
+    SERVICE_REFRESH_DEVICE,
     SERVICE_RESTART_APP,
 )
 from .coordinator import FullyCloudCoordinator
@@ -42,6 +43,13 @@ COMMAND_SERVICE_SCHEMA = vol.Schema(
     }
 )
 
+REFRESH_DEVICE_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_DEVICE_ID): cv.ensure_list,
+        vol.Optional(ATTR_DEVID): cv.ensure_list,
+    }
+)
+
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up Fully Cloud EMM services."""
@@ -54,6 +62,12 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             await coordinator.async_request_refresh()
 
     hass.services.async_register(DOMAIN, SERVICE_REFRESH, async_refresh)
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REFRESH_DEVICE,
+        _refresh_device_service_handler(hass),
+        schema=REFRESH_DEVICE_SERVICE_SCHEMA,
+    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_RESTART_APP,
@@ -99,6 +113,43 @@ async def async_unload_entry(
     return unload_ok
 
 
+def _refresh_device_service_handler(hass: HomeAssistant):
+    """Build a handler for refreshing selected Fully Cloud devices."""
+
+    async def async_handle_refresh_device(call: ServiceCall) -> None:
+        selected_device_ids = _fully_device_ids_from_service_call(hass, call)
+        if not selected_device_ids:
+            raise HomeAssistantError("No Fully Cloud EMM devices were selected")
+
+        by_entry = _selected_devices_by_entry(hass, selected_device_ids)
+        if not by_entry:
+            raise HomeAssistantError(
+                "Selected devices do not belong to Fully Cloud EMM"
+            )
+
+        for entry_id, device_ids in by_entry.items():
+            coordinator = hass.data[DOMAIN][entry_id]
+            device_labels = _device_labels(coordinator, device_ids)
+            try:
+                await coordinator.async_request_refresh()
+            except Exception as err:
+                _LOGGER.warning(
+                    "Fully Cloud refresh failed for %s: %s",
+                    ", ".join(device_labels),
+                    err,
+                )
+                raise HomeAssistantError(
+                    f"Fully Cloud refresh failed: {err}"
+                ) from err
+
+            _LOGGER.warning(
+                "Fully Cloud refresh completed for %s",
+                ", ".join(device_labels),
+            )
+
+    return async_handle_refresh_device
+
+
 def _command_service_handler(hass: HomeAssistant, command: str):
     """Build a handler for a Fully Cloud command service."""
 
@@ -136,8 +187,8 @@ def _command_service_handler(hass: HomeAssistant, command: str):
                     f"Fully Cloud command {command} failed: {err}"
                 ) from err
 
-            _LOGGER.info(
-                "Fully Cloud command %s sent to %s: %s",
+            _LOGGER.warning(
+                "Fully Cloud command %s completed for %s: %s",
                 command,
                 ", ".join(device_labels),
                 _command_result_summary(results),

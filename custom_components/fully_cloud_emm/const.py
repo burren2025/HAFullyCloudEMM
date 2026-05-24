@@ -14,6 +14,7 @@ DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
 DEFAULT_SCAN_INTERVAL_SECONDS = int(DEFAULT_SCAN_INTERVAL.total_seconds())
 
 SERVICE_REFRESH = "refresh"
+SERVICE_REFRESH_DEVICE = "refresh_device"
 SERVICE_REBOOT_DEVICE = "reboot_device"
 SERVICE_RESTART_APP = "restart_app"
 
