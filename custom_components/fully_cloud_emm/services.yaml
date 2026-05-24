@@ -1,0 +1,3 @@
+refresh:
+  name: Refresh
+  description: Fetch the latest Fully Cloud device data for all configured accounts.
