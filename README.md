@@ -7,7 +7,8 @@ The integration connects to the Fully Cloud REST API and creates Home Assistant 
 ## Current Scope
 
 - Config flow setup with Fully Cloud account email and REST API access token.
-- Polls `https://api.fully-kiosk.com/cloud/devices`.
+- Polls `https://api.fully-kiosk.com/cloud/devices` once per hour by default.
+- Provides a `fully_cloud_emm.refresh` service for manual or automation-triggered refreshes.
 - Creates binary sensors for boolean fields.
 - Creates sensors for scalar text and numeric fields.
 - Flattens nested JSON fields so detailed heartbeat values can become Home Assistant entities.
@@ -32,6 +33,12 @@ custom_components/fully_cloud_emm/
 Then check **Settings > System > Logs** for startup errors mentioning `fully_cloud_emm`.
 
 During setup, a failed credential test will log a line starting with `Fully Cloud setup failed:`. That line should show whether Home Assistant received an HTTP error, a non-JSON response, a timeout, or a network connection error.
+
+## Refresh Interval
+
+Fully Cloud EMM refreshes device data once per hour by default.
+
+To refresh more frequently, create a Home Assistant automation that calls the `fully_cloud_emm.refresh` action on your preferred schedule.
 
 ## Notes
 

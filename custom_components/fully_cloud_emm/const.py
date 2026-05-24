@@ -10,8 +10,10 @@ CONF_API_EMAIL = "api_email"
 CONF_API_KEY = "api_key"
 CONF_SCAN_INTERVAL = "scan_interval"
 
-DEFAULT_SCAN_INTERVAL = timedelta(minutes=5)
+DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
 DEFAULT_SCAN_INTERVAL_SECONDS = int(DEFAULT_SCAN_INTERVAL.total_seconds())
+
+SERVICE_REFRESH = "refresh"
 
 API_BASE_URLS = (
     "https://api.fully-kiosk.com/cloud",
