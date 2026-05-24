@@ -9,6 +9,7 @@ The integration connects to the Fully Cloud REST API and creates Home Assistant 
 - Config flow setup with Fully Cloud account email and REST API access token.
 - Polls `https://api.fully-kiosk.com/cloud/devices` once per hour by default.
 - Provides a `fully_cloud_emm.refresh` service for manual or automation-triggered refreshes.
+- Provides actions to restart the Fully Kiosk app or reboot selected devices.
 - Creates binary sensors for boolean fields.
 - Creates sensors for scalar text and numeric fields.
 - Flattens nested JSON fields so detailed heartbeat values can become Home Assistant entities.
@@ -39,6 +40,15 @@ During setup, a failed credential test will log a line starting with `Fully Clou
 Fully Cloud EMM refreshes device data once per hour by default.
 
 To refresh more frequently, create a Home Assistant automation that calls the `fully_cloud_emm.refresh` action on your preferred schedule.
+
+## Device Actions
+
+Fully Cloud EMM provides these Home Assistant actions:
+
+- `fully_cloud_emm.restart_app`
+- `fully_cloud_emm.reboot_device`
+
+Both actions can target one or more Fully Cloud EMM devices or entities from the automation UI. The reboot command depends on Fully Kiosk device support and may require rooted/provisioned devices.
 
 ## Notes
 

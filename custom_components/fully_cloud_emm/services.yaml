@@ -1,3 +1,57 @@
 refresh:
   name: Refresh
   description: Fetch the latest Fully Cloud device data for all configured accounts.
+
+restart_app:
+  name: Restart app
+  description: Restart the Fully Kiosk app on selected devices.
+  target:
+    device:
+      integration: fully_cloud_emm
+    entity:
+      integration: fully_cloud_emm
+  fields:
+    devid:
+      name: Fully device ID
+      description: Optional Fully device ID to target directly.
+      selector:
+        text:
+    queue_offline:
+      name: Queue for offline devices
+      description: Queue the command until offline devices come online.
+      default: false
+      selector:
+        boolean:
+    nowait:
+      name: Do not wait for device response
+      description: Return immediately after Fully Cloud accepts the command.
+      default: true
+      selector:
+        boolean:
+
+reboot_device:
+  name: Reboot device
+  description: Reboot selected devices. Fully requires rooted/provisioned devices for this command.
+  target:
+    device:
+      integration: fully_cloud_emm
+    entity:
+      integration: fully_cloud_emm
+  fields:
+    devid:
+      name: Fully device ID
+      description: Optional Fully device ID to target directly.
+      selector:
+        text:
+    queue_offline:
+      name: Queue for offline devices
+      description: Queue the command until offline devices come online.
+      default: false
+      selector:
+        boolean:
+    nowait:
+      name: Do not wait for device response
+      description: Return immediately after Fully Cloud accepts the command.
+      default: true
+      selector:
+        boolean:
