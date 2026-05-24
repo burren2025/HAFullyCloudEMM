@@ -115,6 +115,7 @@ def _command_service_handler(hass: HomeAssistant, command: str):
 
         for entry_id, device_ids in by_entry.items():
             coordinator = hass.data[DOMAIN][entry_id]
+            device_labels = _device_labels(coordinator, device_ids)
             try:
                 results = await coordinator.client.async_send_command(
                     command,
@@ -125,12 +126,22 @@ def _command_service_handler(hass: HomeAssistant, command: str):
             except HomeAssistantError:
                 raise
             except Exception as err:
+                _LOGGER.warning(
+                    "Fully Cloud command %s failed for %s: %s",
+                    command,
+                    ", ".join(device_labels),
+                    err,
+                )
                 raise HomeAssistantError(
                     f"Fully Cloud command {command} failed: {err}"
                 ) from err
 
-            if results:
-                _LOGGER.debug("Fully Cloud command %s results: %s", command, results)
+            _LOGGER.info(
+                "Fully Cloud command %s sent to %s: %s",
+                command,
+                ", ".join(device_labels),
+                _command_result_summary(results),
+            )
 
     return async_handle_command
 
@@ -177,3 +188,46 @@ def _selected_devices_by_entry(
             grouped[entry_id] = matched_ids
 
     return grouped
+
+
+def _device_labels(
+    coordinator: FullyCloudCoordinator, device_ids: set[str]
+) -> list[str]:
+    """Return readable labels for Fully device IDs."""
+    labels: list[str] = []
+    for device_id in sorted(device_ids):
+        device = coordinator.data.get(device_id)
+        if device is None:
+            labels.append(device_id)
+            continue
+
+        labels.append(f"{device.name} ({device_id})")
+
+    return labels
+
+
+def _command_result_summary(results: list[dict]) -> str:
+    """Return a concise command result summary for logs."""
+    if not results:
+        return "accepted by Fully Cloud"
+
+    summaries: list[str] = []
+    for result in results:
+        status = str(result.get("status") or "unknown")
+        message = str(
+            result.get("statustext")
+            or result.get("message")
+            or result.get("error")
+            or ""
+        ).strip()
+        if message:
+            summaries.append(f"{status}: {_short_log_text(message)}")
+        else:
+            summaries.append(status)
+
+    return "; ".join(summaries)
+
+
+def _short_log_text(value: str) -> str:
+    """Return a short single-line value for logs."""
+    return " ".join(value.split())[:200]

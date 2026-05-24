@@ -52,6 +52,8 @@ Both actions include a **Fully Cloud EMM devices** field in the automation UI. S
 
 The reboot command depends on Fully Kiosk device support and may require rooted/provisioned devices.
 
+Command actions log accepted/successful responses at `INFO` level and failures at `WARNING` level. Routine hourly status polling is not logged on success.
+
 ## Notes
 
 Fully Cloud API credentials are entered through the Home Assistant config flow and stored by Home Assistant in its private config entry storage. Do not commit API keys, email addresses, or local Home Assistant secret files.
