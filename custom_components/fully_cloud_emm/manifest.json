@@ -3,10 +3,9 @@
   "name": "Fully Cloud EMM",
   "codeowners": [],
   "config_flow": true,
-  "documentation": "https://github.com/shorten/HAFullyCloudEMM",
+  "documentation": "https://github.com/burren2025/HAFullyCloudEMM",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
-

@@ -27,6 +27,7 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
+        error_detail = ""
 
         if user_input is not None:
             api_email = user_input[CONF_API_EMAIL].strip()
@@ -40,12 +41,16 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             try:
                 await client.async_get_devices()
-            except FullyCloudAuthError:
+            except FullyCloudAuthError as err:
+                error_detail = str(err)
+                _LOGGER.warning("Fully Cloud authentication failed: %s", err)
                 errors["base"] = "invalid_auth"
             except FullyCloudError as err:
+                error_detail = str(err)
                 _LOGGER.warning("Fully Cloud setup failed: %s", err)
                 errors["base"] = "cannot_connect"
-            except Exception:
+            except Exception as err:
+                error_detail = str(err)
                 _LOGGER.exception("Unexpected error during Fully Cloud setup")
                 errors["base"] = "unknown"
             else:
@@ -63,4 +68,5 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={"error_detail": error_detail},
         )

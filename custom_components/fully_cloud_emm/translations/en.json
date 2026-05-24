@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Fully Cloud EMM",
-        "description": "Enter your Fully Cloud REST API credentials.",
+        "description": "Enter your Fully Cloud REST API credentials.\n\n{error_detail}",
         "data": {
           "api_email": "Fully Cloud account email",
           "api_key": "Fully Cloud API access token"
@@ -20,4 +20,3 @@
     }
   }
 }
-
