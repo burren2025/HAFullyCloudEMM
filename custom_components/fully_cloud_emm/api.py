@@ -86,15 +86,15 @@ class FullyCloudClient:
             raise FullyCloudError("Timed out connecting to Fully Cloud") from err
 
         if isinstance(payload, dict):
-            message = _error_message(payload)
-            if message:
-                if "auth" in message.lower() or "key" in message.lower():
-                    raise FullyCloudAuthError(message)
-                raise FullyCloudError(message)
-
             devices_payload = payload.get("devices")
             if isinstance(devices_payload, list):
                 payload = devices_payload
+            else:
+                message = _error_message(payload)
+                if message:
+                    if "auth" in message.lower() or "key" in message.lower():
+                        raise FullyCloudAuthError(message)
+                    raise FullyCloudError(message)
 
         if isinstance(payload, dict) and payload.get("error"):
             message = str(payload["error"])
@@ -120,7 +120,7 @@ def _summarize_text(value: str) -> str:
 
 def _error_message(payload: dict[str, Any]) -> str | None:
     """Return an API error message from a Fully Cloud response."""
-    for key in ("error", "message", "statustext", "statusText"):
+    for key in ("error", "errorMessage", "error_message"):
         value = payload.get(key)
         if value not in (None, ""):
             return str(value)
