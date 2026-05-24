@@ -53,5 +53,8 @@ class FullyCloudEntity(CoordinatorEntity[FullyCloudCoordinator]):
 
 def field_name(field_key: str) -> str:
     """Convert a flattened payload key into an entity display name."""
+    if field_key.startswith("last_heartbeat_info_"):
+        field_key = field_key.removeprefix("last_heartbeat_info_")
+
     return field_key.replace("_", " ").title()
 
