@@ -8,14 +8,7 @@ restart_app:
   target:
     device:
       integration: fully_cloud_emm
-    entity:
-      integration: fully_cloud_emm
   fields:
-    devid:
-      name: Fully device ID
-      description: Optional Fully device ID to target directly.
-      selector:
-        text:
     queue_offline:
       name: Queue for offline devices
       description: Queue the command until offline devices come online.
@@ -35,14 +28,7 @@ reboot_device:
   target:
     device:
       integration: fully_cloud_emm
-    entity:
-      integration: fully_cloud_emm
   fields:
-    devid:
-      name: Fully device ID
-      description: Optional Fully device ID to target directly.
-      selector:
-        text:
     queue_offline:
       name: Queue for offline devices
       description: Queue the command until offline devices come online.
