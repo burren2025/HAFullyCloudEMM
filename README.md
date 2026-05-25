@@ -44,7 +44,7 @@ This integration is installed as a custom HACS repository.
 4. Select category **Integration**.
 5. Click **Add**.
 6. Search HACS for **Fully Cloud EMM**.
-7. Install the latest stable release.
+7. Download the latest stable release.
 8. Restart Home Assistant.
 
 ## Configure In Home Assistant
