@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
+from typing import Any
 
 import voluptuous as vol
 
@@ -16,23 +18,59 @@ from homeassistant.helpers import device_registry as dr
 
 from .api import FullyCloudClient
 from .const import (
+    ATTR_ACTION,
     ATTR_DEVID,
+    ATTR_ENGINE,
+    ATTR_FOCUS,
+    ATTR_LEVEL,
+    ATTR_LOCALE,
+    ATTR_NEW_TAB,
     ATTR_NOWAIT,
+    ATTR_PACKAGE,
+    ATTR_QUEUE,
     ATTR_QUEUE_OFFLINE,
+    ATTR_STREAM,
+    ATTR_TAB,
+    ATTR_TEXT,
+    ATTR_URL,
     CONF_API_EMAIL,
     CONF_API_KEY,
     DOMAIN,
     PLATFORMS,
+    SERVICE_LOAD_START_URL,
+    SERVICE_LOAD_URL,
     SERVICE_REBOOT_DEVICE,
     SERVICE_REFRESH,
     SERVICE_REFRESH_DEVICE,
     SERVICE_RESTART_APP,
+    SERVICE_SCREEN_OFF,
+    SERVICE_SCREEN_ON,
+    SERVICE_SET_AUDIO_VOLUME,
+    SERVICE_SET_OVERLAY_MESSAGE,
+    SERVICE_START_APPLICATION,
+    SERVICE_START_SCREENSAVER,
+    SERVICE_STOP_SCREENSAVER,
+    SERVICE_STOP_TEXT_TO_SPEECH,
+    SERVICE_TEXT_TO_SPEECH,
 )
 from .coordinator import FullyCloudCoordinator
 
 type FullyCloudConfigEntry = ConfigEntry[FullyCloudCoordinator]
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _command_schema(extra_fields: dict) -> vol.Schema:
+    """Return a command service schema with common targeting fields."""
+    schema = {
+        vol.Optional(ATTR_DEVICE_ID): cv.ensure_list,
+        vol.Optional(ATTR_DEVID): cv.ensure_list,
+        vol.Optional(ATTR_QUEUE_OFFLINE, default=False): cv.boolean,
+        vol.Optional(ATTR_NOWAIT, default=True): cv.boolean,
+    }
+    schema.update(extra_fields)
+    return vol.Schema(schema)
+
 
 COMMAND_SERVICE_SCHEMA = vol.Schema(
     {
@@ -47,6 +85,43 @@ REFRESH_DEVICE_SERVICE_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_DEVICE_ID): cv.ensure_list,
         vol.Optional(ATTR_DEVID): cv.ensure_list,
+    }
+)
+
+LOAD_URL_SERVICE_SCHEMA = _command_schema(
+    {
+        vol.Required(ATTR_URL): str,
+        vol.Optional(ATTR_TAB): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        vol.Optional(ATTR_FOCUS): cv.boolean,
+        vol.Optional(ATTR_NEW_TAB): cv.boolean,
+    }
+)
+
+OVERLAY_MESSAGE_SERVICE_SCHEMA = _command_schema({vol.Required(ATTR_TEXT): str})
+
+START_APPLICATION_SERVICE_SCHEMA = _command_schema(
+    {
+        vol.Required(ATTR_PACKAGE): str,
+        vol.Optional(ATTR_ACTION): str,
+        vol.Optional(ATTR_URL): str,
+    }
+)
+
+TEXT_TO_SPEECH_SERVICE_SCHEMA = _command_schema(
+    {
+        vol.Required(ATTR_TEXT): str,
+        vol.Optional(ATTR_LOCALE): str,
+        vol.Optional(ATTR_ENGINE): str,
+        vol.Optional(ATTR_QUEUE, default=False): cv.boolean,
+    }
+)
+
+SET_AUDIO_VOLUME_SERVICE_SCHEMA = _command_schema(
+    {
+        vol.Required(ATTR_LEVEL): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
+        vol.Optional(ATTR_STREAM, default=3): vol.All(
+            vol.Coerce(int), vol.Range(min=0, max=10)
+        ),
     }
 )
 
@@ -68,18 +143,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         _refresh_device_service_handler(hass),
         schema=REFRESH_DEVICE_SERVICE_SCHEMA,
     )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_RESTART_APP,
-        _command_service_handler(hass, "restartApp"),
-        schema=COMMAND_SERVICE_SCHEMA,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_REBOOT_DEVICE,
-        _command_service_handler(hass, "rebootDevice"),
-        schema=COMMAND_SERVICE_SCHEMA,
-    )
+    _register_command_services(hass)
     return True
 
 
@@ -111,6 +175,34 @@ async def async_unload_entry(
         hass.data[DOMAIN].pop(entry.entry_id, None)
 
     return unload_ok
+
+
+
+def _register_command_services(hass: HomeAssistant) -> None:
+    """Register Fully Remote Admin command services."""
+    services: tuple[tuple[str, str, vol.Schema, Callable[[ServiceCall], dict[str, Any]]], ...] = (
+        (SERVICE_LOAD_START_URL, "loadStartUrl", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_RESTART_APP, "restartApp", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_REBOOT_DEVICE, "rebootDevice", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_SCREEN_ON, "screenOn", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_SCREEN_OFF, "screenOff", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_START_SCREENSAVER, "startScreensaver", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_STOP_SCREENSAVER, "stopScreensaver", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_STOP_TEXT_TO_SPEECH, "stopTextToSpeech", COMMAND_SERVICE_SCHEMA, _no_parameters),
+        (SERVICE_SET_OVERLAY_MESSAGE, "setOverlayMessage", OVERLAY_MESSAGE_SERVICE_SCHEMA, _text_parameters),
+        (SERVICE_LOAD_URL, "loadUrl", LOAD_URL_SERVICE_SCHEMA, _load_url_parameters),
+        (SERVICE_START_APPLICATION, "startApplication", START_APPLICATION_SERVICE_SCHEMA, _start_application_parameters),
+        (SERVICE_TEXT_TO_SPEECH, "textToSpeech", TEXT_TO_SPEECH_SERVICE_SCHEMA, _text_to_speech_parameters),
+        (SERVICE_SET_AUDIO_VOLUME, "setAudioVolume", SET_AUDIO_VOLUME_SERVICE_SCHEMA, _audio_volume_parameters),
+    )
+
+    for service, command, schema, parameter_builder in services:
+        hass.services.async_register(
+            DOMAIN,
+            service,
+            _command_service_handler(hass, command, parameter_builder),
+            schema=schema,
+        )
 
 
 def _refresh_device_service_handler(hass: HomeAssistant):
@@ -150,7 +242,11 @@ def _refresh_device_service_handler(hass: HomeAssistant):
     return async_handle_refresh_device
 
 
-def _command_service_handler(hass: HomeAssistant, command: str):
+def _command_service_handler(
+    hass: HomeAssistant,
+    command: str,
+    parameter_builder: Callable[[ServiceCall], dict[str, Any]],
+):
     """Build a handler for a Fully Cloud command service."""
 
     async def async_handle_command(call: ServiceCall) -> None:
@@ -171,6 +267,7 @@ def _command_service_handler(hass: HomeAssistant, command: str):
                 results = await coordinator.client.async_send_command(
                     command,
                     sorted(device_ids),
+                    parameters=parameter_builder(call),
                     persistent=call.data[ATTR_QUEUE_OFFLINE],
                     nowait=call.data[ATTR_NOWAIT],
                 )
@@ -195,6 +292,50 @@ def _command_service_handler(hass: HomeAssistant, command: str):
             )
 
     return async_handle_command
+
+
+def _no_parameters(call: ServiceCall) -> dict[str, Any]:
+    """Return no command parameters."""
+    return {}
+
+
+def _text_parameters(call: ServiceCall) -> dict[str, Any]:
+    """Return text parameter for a command."""
+    return {"text": call.data[ATTR_TEXT]}
+
+
+def _load_url_parameters(call: ServiceCall) -> dict[str, Any]:
+    """Return loadUrl command parameters."""
+    return {
+        "url": call.data[ATTR_URL],
+        "tab": call.data.get(ATTR_TAB),
+        "focus": call.data.get(ATTR_FOCUS),
+        "newtab": call.data.get(ATTR_NEW_TAB),
+    }
+
+
+def _start_application_parameters(call: ServiceCall) -> dict[str, Any]:
+    """Return startApplication command parameters."""
+    return {
+        "package": call.data[ATTR_PACKAGE],
+        "action": call.data.get(ATTR_ACTION),
+        "url": call.data.get(ATTR_URL),
+    }
+
+
+def _text_to_speech_parameters(call: ServiceCall) -> dict[str, Any]:
+    """Return textToSpeech command parameters."""
+    return {
+        "text": call.data[ATTR_TEXT],
+        "locale": call.data.get(ATTR_LOCALE),
+        "engine": call.data.get(ATTR_ENGINE),
+        "queue": call.data.get(ATTR_QUEUE),
+    }
+
+
+def _audio_volume_parameters(call: ServiceCall) -> dict[str, Any]:
+    """Return setAudioVolume command parameters."""
+    return {"level": call.data[ATTR_LEVEL], "stream": call.data[ATTR_STREAM]}
 
 
 def _fully_device_ids_from_service_call(

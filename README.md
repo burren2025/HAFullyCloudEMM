@@ -46,10 +46,21 @@ To refresh more frequently, create a Home Assistant automation that calls the `f
 Fully Cloud EMM provides these Home Assistant actions:
 
 - `fully_cloud_emm.refresh_device`
+- `fully_cloud_emm.load_start_url`
+- `fully_cloud_emm.load_url`
 - `fully_cloud_emm.restart_app`
 - `fully_cloud_emm.reboot_device`
+- `fully_cloud_emm.screen_on`
+- `fully_cloud_emm.screen_off`
+- `fully_cloud_emm.start_screensaver`
+- `fully_cloud_emm.stop_screensaver`
+- `fully_cloud_emm.set_overlay_message`
+- `fully_cloud_emm.start_application`
+- `fully_cloud_emm.text_to_speech`
+- `fully_cloud_emm.stop_text_to_speech`
+- `fully_cloud_emm.set_audio_volume`
 
-Both actions include a **Fully Cloud EMM devices** field in the automation UI. Select one or more friendly Home Assistant device names there, and the integration uses the Fully device ID internally when it sends the command.
+These actions include a **Fully Cloud EMM devices** field in the automation UI. Select one or more friendly Home Assistant device names there, and the integration uses the Fully device ID internally when it sends the command.
 
 The reboot command depends on Fully Kiosk device support and may require rooted/provisioned devices.
 

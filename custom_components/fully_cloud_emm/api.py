@@ -117,6 +117,7 @@ class FullyCloudClient:
         command: str,
         device_ids: list[str],
         *,
+        parameters: dict[str, Any] | None = None,
         persistent: bool = False,
         nowait: bool = True,
     ) -> list[dict[str, Any]]:
@@ -132,6 +133,8 @@ class FullyCloudClient:
             "persistent": "1" if persistent else "0",
             "nowait": "1" if nowait else "0",
         }
+        if parameters:
+            query.update(_serialize_command_parameters(parameters))
         url = URL(API_REMOTE_URL).with_query(query)
 
         try:
@@ -164,6 +167,20 @@ class FullyCloudClient:
             raise FullyCloudError(message)
 
         return results
+
+
+def _serialize_command_parameters(parameters: dict[str, Any]) -> dict[str, str]:
+    """Serialize command parameters for Fully Remote Admin."""
+    serialized: dict[str, str] = {}
+    for key, value in parameters.items():
+        if value in (None, ""):
+            continue
+        if isinstance(value, bool):
+            serialized[key] = "1" if value else "0"
+        else:
+            serialized[key] = str(value)
+
+    return serialized
 
 
 def _summarize_text(value: str) -> str:
