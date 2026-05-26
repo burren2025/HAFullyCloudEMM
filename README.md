@@ -12,9 +12,7 @@ The integration connects to the Fully Cloud REST API, discovers the devices avai
 - Create sensors for text and numeric device fields.
 - Group entities under each Fully Cloud device.
 - Manually refresh all devices or selected devices from Home Assistant actions.
-- Send selected Fully Cloud commands from Home Assistant actions:
-  - Restart Fully Kiosk app
-  - Reboot device
+- Send selected Fully Cloud commands from Home Assistant actions, including screen control, URL loading, text-to-speech, app restart, and device reboot.
 - Log manual command and device-refresh outcomes in Home Assistant Core logs.
 
 ## Prerequisites
@@ -66,8 +64,19 @@ Fully Cloud EMM provides these Home Assistant actions:
 
 - `fully_cloud_emm.refresh`
 - `fully_cloud_emm.refresh_device`
+- `fully_cloud_emm.load_start_url`
+- `fully_cloud_emm.load_url`
 - `fully_cloud_emm.restart_app`
 - `fully_cloud_emm.reboot_device`
+- `fully_cloud_emm.screen_on`
+- `fully_cloud_emm.screen_off`
+- `fully_cloud_emm.start_screensaver`
+- `fully_cloud_emm.stop_screensaver`
+- `fully_cloud_emm.set_overlay_message`
+- `fully_cloud_emm.start_application`
+- `fully_cloud_emm.text_to_speech`
+- `fully_cloud_emm.stop_text_to_speech`
+- `fully_cloud_emm.set_audio_volume`
 
 The device-targeted actions include a **Fully Cloud EMM devices** field in the automation UI. Select one or more friendly Home Assistant device names there, and the integration uses the Fully device ID internally.
 
@@ -81,4 +90,4 @@ If setup fails, Home Assistant logs a message starting with `Fully Cloud setup f
 
 ## Updates
 
-For production Home Assistant instances, install stable GitHub releases only. Beta releases are published as GitHub pre-releases and should be tested in a separate Home Assistant instance before production use.
+Install updates from stable GitHub releases. After downloading an update in HACS, restart Home Assistant so the updated integration code is loaded.
