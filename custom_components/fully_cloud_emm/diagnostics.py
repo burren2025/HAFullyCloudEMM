@@ -11,7 +11,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from .const import CONF_API_EMAIL, CONF_API_KEY
 from .coordinator import FullyCloudCoordinator
 
-TO_REDACT = {CONF_API_EMAIL, CONF_API_KEY, "apikey", "apiemail"}
+TO_REDACT = {CONF_API_EMAIL, CONF_API_KEY, "apikey", "apiemail", "email"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -48,7 +48,8 @@ def _redact_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _redact(key: str, value: Any) -> Any:
-    if key.lower() in TO_REDACT or "key" in key.lower() or "token" in key.lower():
+    normalized_key = key.lower()
+    if normalized_key in TO_REDACT or "key" in normalized_key or "token" in normalized_key:
         return "**REDACTED**"
     if isinstance(value, dict):
         return _redact_payload(value)
