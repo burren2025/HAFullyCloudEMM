@@ -14,7 +14,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
-from .api import FullyCloudClient
+from .api import FullyCloudClient, _redact_message
 from .const import (
     ATTR_DEVID,
     ATTR_NOWAIT,
@@ -136,10 +136,10 @@ def _refresh_device_service_handler(hass: HomeAssistant):
                 _LOGGER.warning(
                     "Fully Cloud refresh failed for %s: %s",
                     ", ".join(device_labels),
-                    err,
+                    _redact_message(str(err)),
                 )
                 raise HomeAssistantError(
-                    f"Fully Cloud refresh failed: {err}"
+                    f"Fully Cloud refresh failed: {_redact_message(str(err))}"
                 ) from err
 
             _LOGGER.warning(
@@ -181,10 +181,10 @@ def _command_service_handler(hass: HomeAssistant, command: str):
                     "Fully Cloud command %s failed for %s: %s",
                     command,
                     ", ".join(device_labels),
-                    err,
+                    _redact_message(str(err)),
                 )
                 raise HomeAssistantError(
-                    f"Fully Cloud command {command} failed: {err}"
+                    f"Fully Cloud command {command} failed: {_redact_message(str(err))}"
                 ) from err
 
             _LOGGER.warning(
@@ -272,7 +272,7 @@ def _command_result_summary(results: list[dict]) -> str:
             or ""
         ).strip()
         if message:
-            summaries.append(f"{status}: {_short_log_text(message)}")
+            summaries.append(f"{status}: {_redact_message(_short_log_text(message))}")
         else:
             summaries.append(status)
 

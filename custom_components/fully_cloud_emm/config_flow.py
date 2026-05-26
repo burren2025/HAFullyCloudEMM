@@ -11,7 +11,7 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import FullyCloudAuthError, FullyCloudClient, FullyCloudError
+from .api import FullyCloudAuthError, FullyCloudClient, FullyCloudError, _redact_message
 from .const import CONF_API_EMAIL, CONF_API_KEY, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,15 +42,15 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await client.async_get_devices()
             except FullyCloudAuthError as err:
-                error_detail = str(err)
-                _LOGGER.warning("Fully Cloud authentication failed: %s", err)
+                error_detail = _redact_message(str(err))
+                _LOGGER.warning("Fully Cloud authentication failed: %s", error_detail)
                 errors["base"] = "invalid_auth"
             except FullyCloudError as err:
-                error_detail = str(err)
-                _LOGGER.warning("Fully Cloud setup failed: %s", err)
+                error_detail = _redact_message(str(err))
+                _LOGGER.warning("Fully Cloud setup failed: %s", error_detail)
                 errors["base"] = "cannot_connect"
             except Exception as err:
-                error_detail = str(err)
+                error_detail = _redact_message(str(err))
                 _LOGGER.exception("Unexpected error during Fully Cloud setup")
                 errors["base"] = "unknown"
             else:

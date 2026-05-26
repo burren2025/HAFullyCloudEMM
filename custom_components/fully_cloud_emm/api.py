@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from json import JSONDecodeError
 from typing import Any
 
@@ -21,6 +22,12 @@ class FullyCloudError(Exception):
 
 class FullyCloudAuthError(FullyCloudError):
     """Raised when Fully Cloud rejects credentials."""
+
+
+SENSITIVE_QUERY_RE = re.compile(
+    r"(?i)((?:apiemail|apikey|token|key|password|secret)=)([^&\s]+)"
+)
+EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
 
 
 class FullyCloudClient:
@@ -47,11 +54,11 @@ class FullyCloudClient:
             try:
                 return await self._async_get_devices_from_url(base_url)
             except FullyCloudAuthError as err:
-                auth_failures.append(f"{base_url}: {err}")
-                _LOGGER.debug("Fully Cloud authentication failed for %s: %s", base_url, err)
+                auth_failures.append(f"{base_url}: {_redact_message(str(err))}")
+                _LOGGER.debug("Fully Cloud authentication failed for %s: %s", base_url, _redact_message(str(err)))
             except FullyCloudError as err:
-                failures.append(f"{base_url}: {err}")
-                _LOGGER.debug("Fully Cloud request failed for %s: %s", base_url, err)
+                failures.append(f"{base_url}: {_redact_message(str(err))}")
+                _LOGGER.debug("Fully Cloud request failed for %s: %s", base_url, _redact_message(str(err)))
 
         if failures:
             raise FullyCloudError("; ".join(failures))
@@ -78,7 +85,7 @@ class FullyCloudClient:
             raise FullyCloudError(f"Fully Cloud returned HTTP {err.status}") from err
         except JSONDecodeError as err:
             raise FullyCloudError(
-                f"Fully Cloud returned non-JSON response: {_summarize_text(text)}"
+                f"Fully Cloud returned non-JSON response: {_redact_message(_summarize_text(text))}"
             ) from err
         except ClientError as err:
             raise FullyCloudError(f"Could not connect to Fully Cloud: {err}") from err
@@ -158,7 +165,7 @@ class FullyCloudClient:
                 str(result.get("statustext") or result.get("error") or result)
                 for result in failures
             ]
-            message = "; ".join(messages)
+            message = _redact_message("; ".join(messages))
             if "auth" in message.lower() or "key" in message.lower():
                 raise FullyCloudAuthError(message)
             raise FullyCloudError(message)
@@ -169,6 +176,12 @@ class FullyCloudClient:
 def _summarize_text(value: str) -> str:
     """Return a short, log-safe response summary."""
     return " ".join(value.split())[:200]
+
+
+def _redact_message(value: str) -> str:
+    """Redact credentials and email addresses from API-provided text."""
+    value = SENSITIVE_QUERY_RE.sub(r"\1**REDACTED**", value)
+    return EMAIL_RE.sub("**REDACTED_EMAIL**", value)
 
 
 def _parse_command_response(value: str) -> list[dict[str, Any]]:
@@ -205,10 +218,10 @@ def _error_message(payload: dict[str, Any]) -> str | None:
     for key in ("error", "errorMessage", "error_message"):
         value = payload.get(key)
         if value not in (None, ""):
-            return str(value)
+            return _redact_message(str(value))
 
     status = payload.get("status")
     if isinstance(status, str) and status.lower() in {"error", "failed", "failure"}:
-        return str(payload)
+        return _redact_message(str(payload))
 
     return None
