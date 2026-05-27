@@ -4,10 +4,11 @@
   "codeowners": [],
   "config_flow": true,
   "documentation": "https://github.com/burren2025/HAFullyCloudEMM",
+  "issue_tracker": "https://github.com/burren2025/HAFullyCloudEMM/issues",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "requirements": [],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "loggers": [
     "custom_components.fully_cloud_emm"
   ]
