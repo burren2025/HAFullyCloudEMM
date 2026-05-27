@@ -405,7 +405,9 @@ def _command_result_summary(results: list[dict]) -> str:
 
     summaries: list[str] = []
     for result in results:
-        status = str(result.get("status") or "unknown")
+        status = _redact_message(
+            _short_log_text(str(result.get("status") or "unknown"))
+        )
         message = str(
             result.get("statustext")
             or result.get("message")

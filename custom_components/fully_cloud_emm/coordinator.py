@@ -15,6 +15,9 @@ from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+MAX_FLATTEN_DEPTH = 8
+MAX_FLATTEN_FIELDS = 500
+
 
 @dataclass(frozen=True)
 class FullyCloudDevice:
@@ -78,24 +81,49 @@ def _device_name(payload: Mapping[str, Any], device_id: str) -> str:
 def _flatten_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
     fields: dict[str, Any] = {}
 
-    def flatten(prefix: str, value: Any) -> None:
+    def add_field(key: str, value: Any) -> bool:
+        if not key or len(fields) >= MAX_FLATTEN_FIELDS:
+            return False
+        fields[key] = value
+        return True
+
+    def flatten(prefix: str, value: Any, depth: int) -> None:
+        if len(fields) >= MAX_FLATTEN_FIELDS:
+            return
+
+        if depth >= MAX_FLATTEN_DEPTH:
+            add_field(prefix, _safe_leaf_value(value))
+            return
+
         if isinstance(value, Mapping):
+            if not value:
+                add_field(prefix, {})
+                return
             for nested_key, nested_value in value.items():
                 key = _field_key(str(nested_key))
-                flatten(f"{prefix}_{key}" if prefix else key, nested_value)
+                flatten(f"{prefix}_{key}" if prefix else key, nested_value, depth + 1)
             return
 
         if isinstance(value, list):
-            for position, nested_value in enumerate(value):
-                flatten(f"{prefix}_{position + 1}", nested_value)
             if not value:
-                fields[prefix] = []
+                add_field(prefix, [])
+                return
+            for position, nested_value in enumerate(value):
+                flatten(f"{prefix}_{position + 1}", nested_value, depth + 1)
             return
 
-        fields[prefix] = value
+        add_field(prefix, value)
 
-    flatten("", payload)
+    flatten("", payload, 0)
     return {key: value for key, value in fields.items() if key}
+
+
+def _safe_leaf_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return "[object]"
+    if isinstance(value, list):
+        return "[list]"
+    return value
 
 
 def _field_key(value: str) -> str:

@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
 from json import JSONDecodeError
 from typing import Any
 
-from aiohttp import ClientError, ClientResponseError, ClientSession
+from aiohttp import ClientError, ClientResponseError, ClientSession, ClientTimeout
 from yarl import URL
 
 from .const import API_BASE_URLS, API_REMOTE_URL
 
 _LOGGER = logging.getLogger(__name__)
+
+REQUEST_TIMEOUT = ClientTimeout(total=30)
 
 
 class FullyCloudError(Exception):
@@ -26,6 +29,10 @@ class FullyCloudAuthError(FullyCloudError):
 
 SENSITIVE_QUERY_RE = re.compile(
     r"(?i)((?:apiemail|apikey|token|key|password|secret)=)([^&\s]+)"
+)
+SENSITIVE_KEY_VALUE_RE = re.compile(
+    r"(?i)([\'\"]?(?:apiemail|apikey|token|key|password|secret)"
+    r"[\'\"]?\s*[:=]\s*[\'\"]?)([^\'\"&\s,}\]]+)"
 )
 EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
 
@@ -55,10 +62,18 @@ class FullyCloudClient:
                 return await self._async_get_devices_from_url(base_url)
             except FullyCloudAuthError as err:
                 auth_failures.append(f"{base_url}: {_redact_message(str(err))}")
-                _LOGGER.debug("Fully Cloud authentication failed for %s: %s", base_url, _redact_message(str(err)))
+                _LOGGER.debug(
+                    "Fully Cloud authentication failed for %s: %s",
+                    base_url,
+                    _redact_message(str(err)),
+                )
             except FullyCloudError as err:
                 failures.append(f"{base_url}: {_redact_message(str(err))}")
-                _LOGGER.debug("Fully Cloud request failed for %s: %s", base_url, _redact_message(str(err)))
+                _LOGGER.debug(
+                    "Fully Cloud request failed for %s: %s",
+                    base_url,
+                    _redact_message(str(err)),
+                )
 
         if failures:
             raise FullyCloudError("; ".join(failures))
@@ -70,12 +85,13 @@ class FullyCloudClient:
 
     async def _async_get_devices_from_url(self, base_url: str) -> list[dict[str, Any]]:
         """Return devices from one Fully Cloud API base URL."""
-        url = URL(f"{base_url}/devices").with_query(
-            {"apiemail": self._api_email, "apikey": self._api_key}
-        )
+        url = URL(f"{base_url}/devices")
+        query = {"apiemail": self._api_email, "apikey": self._api_key}
 
         try:
-            response = await self._session.get(url, timeout=30)
+            response = await self._session.get(
+                url, params=query, timeout=REQUEST_TIMEOUT
+            )
             response.raise_for_status()
             text = await response.text()
             payload = json.loads(text)
@@ -88,8 +104,9 @@ class FullyCloudClient:
                 f"Fully Cloud returned non-JSON response: {_redact_message(_summarize_text(text))}"
             ) from err
         except ClientError as err:
-            raise FullyCloudError(f"Could not connect to Fully Cloud: {err}") from err
-        except TimeoutError as err:
+            message = _redact_message(str(err))
+            raise FullyCloudError(f"Could not connect to Fully Cloud: {message}") from err
+        except asyncio.TimeoutError as err:
             raise FullyCloudError("Timed out connecting to Fully Cloud") from err
 
         if isinstance(payload, dict):
@@ -142,10 +159,12 @@ class FullyCloudClient:
         }
         if parameters:
             query.update(_serialize_command_parameters(parameters))
-        url = URL(API_REMOTE_URL).with_query(query)
+        url = URL(API_REMOTE_URL)
 
         try:
-            response = await self._session.get(url, timeout=30)
+            response = await self._session.get(
+                url, params=query, timeout=REQUEST_TIMEOUT
+            )
             response.raise_for_status()
             text = await response.text()
         except ClientResponseError as err:
@@ -153,8 +172,9 @@ class FullyCloudClient:
                 raise FullyCloudAuthError("Fully Cloud rejected the credentials") from err
             raise FullyCloudError(f"Fully Cloud returned HTTP {err.status}") from err
         except ClientError as err:
-            raise FullyCloudError(f"Could not connect to Fully Cloud: {err}") from err
-        except TimeoutError as err:
+            message = _redact_message(str(err))
+            raise FullyCloudError(f"Could not connect to Fully Cloud: {message}") from err
+        except asyncio.TimeoutError as err:
             raise FullyCloudError("Timed out connecting to Fully Cloud") from err
 
         results = _parse_command_response(text)
@@ -198,6 +218,7 @@ def _summarize_text(value: str) -> str:
 def _redact_message(value: str) -> str:
     """Redact credentials and email addresses from API-provided text."""
     value = SENSITIVE_QUERY_RE.sub(r"\1**REDACTED**", value)
+    value = SENSITIVE_KEY_VALUE_RE.sub(r"\1**REDACTED**", value)
     return EMAIL_RE.sub("**REDACTED_EMAIL**", value)
 
 
