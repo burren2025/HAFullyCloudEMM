@@ -225,7 +225,7 @@ def _refresh_device_service_handler(hass: HomeAssistant):
             try:
                 await coordinator.async_request_refresh()
             except Exception as err:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Fully Cloud refresh failed for %s: %s",
                     ", ".join(device_labels),
                     _redact_message(str(err)),
@@ -234,10 +234,6 @@ def _refresh_device_service_handler(hass: HomeAssistant):
                     f"Fully Cloud refresh failed: {_redact_message(str(err))}"
                 ) from err
 
-            _LOGGER.warning(
-                "Fully Cloud refresh completed for %s",
-                ", ".join(device_labels),
-            )
 
     return async_handle_refresh_device
 

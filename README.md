@@ -84,7 +84,7 @@ The reboot command depends on Fully Kiosk device support and may require rooted/
 
 ## Logging
 
-Manual command actions and device-targeted refreshes log outcomes at `WARNING` level so they appear in the default Home Assistant Core log. Routine hourly status polling is not logged on success.
+Manual command actions log outcomes at `WARNING` level so they appear in the default Home Assistant Core log. Refresh actions and routine status polling are not logged on success.
 
 If setup fails, Home Assistant logs a message starting with `Fully Cloud setup failed:` with the underlying connection or API response detail.
 
