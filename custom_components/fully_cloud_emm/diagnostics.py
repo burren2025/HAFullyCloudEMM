@@ -8,10 +8,18 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import CONF_API_EMAIL, CONF_API_KEY
+from .const import CONF_API_EMAIL, CONF_API_KEY, CONF_LOCAL_DEVICES
 from .coordinator import FullyCloudCoordinator
 
-TO_REDACT = {CONF_API_EMAIL, CONF_API_KEY, "apikey", "apiemail", "email"}
+TO_REDACT = {
+    CONF_API_EMAIL,
+    CONF_API_KEY,
+    CONF_LOCAL_DEVICES,
+    "apikey",
+    "apiemail",
+    "email",
+    "password",
+}
 
 
 async def async_get_config_entry_diagnostics(
@@ -21,6 +29,7 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data
     return {
         "entry": {key: _redact(key, value) for key, value in entry.data.items()},
+        "options": {key: _redact(key, value) for key, value in entry.options.items()},
         "device_count": len(coordinator.data),
         "devices": {
             device_id: _redact_payload(device.payload)

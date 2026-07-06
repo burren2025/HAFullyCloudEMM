@@ -18,5 +18,19 @@
     "abort": {
       "already_configured": "This Fully Cloud account is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Fully Cloud EMM options",
+        "description": "Optional local Fully Kiosk Remote Admin endpoints. Use one device per line: http://192.168.1.50:2323|password or devid|http://192.168.1.50:2323|password. If the port is omitted, 2323 is used.\n\n{error_detail}",
+        "data": {
+          "local_devices": "Local devices"
+        }
+      }
+    },
+    "error": {
+      "invalid_local_devices": "One or more local device entries are invalid."
+    }
   }
 }

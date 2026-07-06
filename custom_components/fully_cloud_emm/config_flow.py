@@ -10,9 +10,11 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 
 from .api import FullyCloudAuthError, FullyCloudClient, FullyCloudError, _redact_message
-from .const import CONF_API_EMAIL, CONF_API_KEY, DOMAIN
+from .const import CONF_API_EMAIL, CONF_API_KEY, CONF_LOCAL_DEVICES, DOMAIN
+from .local_api import parse_local_device_options
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,6 +23,13 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a Fully Cloud EMM config flow."""
 
     VERSION = 1
+
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        """Create the options flow."""
+        return FullyCloudOptionsFlow(config_entry)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -65,6 +74,46 @@ class FullyCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_API_EMAIL): str,
                     vol.Required(CONF_API_KEY): str,
+                }
+            ),
+            errors=errors,
+            description_placeholders={"error_detail": error_detail},
+        )
+
+
+class FullyCloudOptionsFlow(config_entries.OptionsFlow):
+    """Handle Fully Cloud EMM options."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self._config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage integration options."""
+        errors: dict[str, str] = {}
+        error_detail = ""
+
+        if user_input is not None:
+            local_devices = user_input.get(CONF_LOCAL_DEVICES, "").strip()
+            try:
+                parse_local_device_options(local_devices)
+            except ValueError as err:
+                error_detail = _redact_message(str(err))
+                errors["base"] = "invalid_local_devices"
+            else:
+                return self.async_create_entry(
+                    title="", data={CONF_LOCAL_DEVICES: local_devices}
+                )
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_LOCAL_DEVICES,
+                        default=self._config_entry.options.get(CONF_LOCAL_DEVICES, ""),
+                    ): TextSelector(TextSelectorConfig(multiline=True)),
                 }
             ),
             errors=errors,

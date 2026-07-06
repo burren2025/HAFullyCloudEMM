@@ -35,6 +35,7 @@ from .const import (
     ATTR_URL,
     CONF_API_EMAIL,
     CONF_API_KEY,
+    CONF_LOCAL_DEVICES,
     DOMAIN,
     PLATFORMS,
     SERVICE_LOAD_START_URL,
@@ -54,6 +55,7 @@ from .const import (
     SERVICE_TEXT_TO_SPEECH,
 )
 from .coordinator import FullyCloudCoordinator
+from .local_api import FullyLocalClient, parse_local_device_options
 
 type FullyCloudConfigEntry = ConfigEntry[FullyCloudCoordinator]
 
@@ -151,19 +153,34 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: FullyCloudConfigEntry
 ) -> bool:
     """Set up Fully Cloud EMM from a config entry."""
+    session = async_get_clientsession(hass)
     client = FullyCloudClient(
-        async_get_clientsession(hass),
+        session,
         entry.data[CONF_API_EMAIL],
         entry.data[CONF_API_KEY],
     )
-    coordinator = FullyCloudCoordinator(hass, client)
+    local_clients = tuple(
+        FullyLocalClient(session, config)
+        for config in parse_local_device_options(
+            entry.options.get(CONF_LOCAL_DEVICES, "")
+        )
+    )
+    coordinator = FullyCloudCoordinator(hass, client, local_clients)
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
+
+
+async def _async_update_listener(
+    hass: HomeAssistant, entry: FullyCloudConfigEntry
+) -> None:
+    """Reload the integration when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(
@@ -259,14 +276,33 @@ def _command_service_handler(
         for entry_id, device_ids in by_entry.items():
             coordinator = hass.data[DOMAIN][entry_id]
             device_labels = _device_labels(coordinator, device_ids)
+            parameters = parameter_builder(call)
             try:
-                results = await coordinator.client.async_send_command(
-                    command,
-                    sorted(device_ids),
-                    parameters=parameter_builder(call),
-                    persistent=call.data[ATTR_QUEUE_OFFLINE],
-                    nowait=call.data[ATTR_NOWAIT],
-                )
+                results = []
+                cloud_device_ids = set(device_ids)
+
+                for device_id in sorted(device_ids):
+                    local_client = coordinator.local_client_for_device(device_id)
+                    if local_client is None:
+                        continue
+
+                    results.extend(
+                        await local_client.async_send_command(
+                            command, parameters=parameters
+                        )
+                    )
+                    cloud_device_ids.discard(device_id)
+
+                if cloud_device_ids:
+                    results.extend(
+                        await coordinator.client.async_send_command(
+                            command,
+                            sorted(cloud_device_ids),
+                            parameters=parameters,
+                            persistent=call.data[ATTR_QUEUE_OFFLINE],
+                            nowait=call.data[ATTR_NOWAIT],
+                        )
+                    )
             except HomeAssistantError:
                 raise
             except Exception as err:

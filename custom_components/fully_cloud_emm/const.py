@@ -9,9 +9,11 @@ DOMAIN = "fully_cloud_emm"
 CONF_API_EMAIL = "api_email"
 CONF_API_KEY = "api_key"
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_LOCAL_DEVICES = "local_devices"
 
 DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
 DEFAULT_SCAN_INTERVAL_SECONDS = int(DEFAULT_SCAN_INTERVAL.total_seconds())
+DEFAULT_LOCAL_API_PORT = 2323
 
 SERVICE_LOAD_START_URL = "load_start_url"
 SERVICE_LOAD_URL = "load_url"

@@ -58,6 +58,25 @@ After Home Assistant restarts:
 
 HACS only installs the integration files. The email/API token prompt appears when adding the integration from **Devices & services**, not during the HACS install step.
 
+## Optional Local API
+
+If a Fully Kiosk device is reachable on the same network as Home Assistant, you can add its local Remote Admin endpoint from the integration options. Fully Kiosk Remote Admin commonly listens on port `2323`. Enable Remote Admin on the tablet first and use the Remote Admin password from Fully Kiosk.
+
+1. Go to **Settings > Devices & services**.
+2. Open **Fully Cloud EMM**.
+3. Choose **Configure**.
+4. Add one local device per line.
+
+Examples:
+
+```text
+192.168.1.50|remote_admin_password
+http://192.168.1.50:2323|remote_admin_password
+57626449-1551598e|192.168.1.50:2323|remote_admin_password
+```
+
+When a local endpoint matches a cloud device, the integration adds local `deviceInfo` fields under `local_device_info_*` entities and sends command actions through the local API for that device. Devices without a local endpoint continue to use Fully Cloud.
+
 ## Actions
 
 Fully Cloud EMM provides these Home Assistant actions:
