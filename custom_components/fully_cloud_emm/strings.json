@@ -30,7 +30,8 @@
       }
     },
     "error": {
-      "invalid_local_devices": "One or more local device entries are invalid."
+      "invalid_local_devices": "One or more local device entries are invalid.",
+      "local_cannot_connect": "Could not connect to one or more local Fully Kiosk devices."
     }
   }
 }

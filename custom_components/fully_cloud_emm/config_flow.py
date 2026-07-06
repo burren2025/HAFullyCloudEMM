@@ -14,7 +14,7 @@ from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 
 from .api import FullyCloudAuthError, FullyCloudClient, FullyCloudError, _redact_message
 from .const import CONF_API_EMAIL, CONF_API_KEY, CONF_LOCAL_DEVICES, DOMAIN
-from .local_api import parse_local_device_options
+from .local_api import FullyLocalClient, parse_local_device_options
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -97,14 +97,23 @@ class FullyCloudOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             local_devices = user_input.get(CONF_LOCAL_DEVICES, "").strip()
             try:
-                parse_local_device_options(local_devices)
+                configs = parse_local_device_options(local_devices)
             except ValueError as err:
                 error_detail = _redact_message(str(err))
                 errors["base"] = "invalid_local_devices"
             else:
-                return self.async_create_entry(
-                    title="", data={CONF_LOCAL_DEVICES: local_devices}
-                )
+                try:
+                    await _async_validate_local_devices(self.hass, configs)
+                except FullyCloudError as err:
+                    error_detail = _redact_message(str(err))
+                    _LOGGER.warning(
+                        "Fully local API validation failed: %s", error_detail
+                    )
+                    errors["base"] = "local_cannot_connect"
+                else:
+                    return self.async_create_entry(
+                        title="", data={CONF_LOCAL_DEVICES: local_devices}
+                    )
 
         return self.async_show_form(
             step_id="init",
@@ -119,3 +128,11 @@ class FullyCloudOptionsFlow(config_entries.OptionsFlow):
             errors=errors,
             description_placeholders={"error_detail": error_detail},
         )
+
+
+async def _async_validate_local_devices(hass, configs) -> None:
+    """Validate configured local Fully Kiosk endpoints."""
+    session = async_get_clientsession(hass)
+    for config in configs:
+        client = FullyLocalClient(session, config)
+        await client.async_get_device_info()
