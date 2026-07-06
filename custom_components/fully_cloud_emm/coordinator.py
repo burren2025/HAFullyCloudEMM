@@ -36,7 +36,7 @@ class FullyCloudCoordinator(DataUpdateCoordinator[dict[str, FullyCloudDevice]]):
     def __init__(
         self,
         hass: HomeAssistant,
-        client: FullyCloudClient,
+        client: FullyCloudClient | None,
         local_clients: tuple[FullyLocalClient, ...] = (),
     ) -> None:
         super().__init__(
@@ -50,15 +50,17 @@ class FullyCloudCoordinator(DataUpdateCoordinator[dict[str, FullyCloudDevice]]):
         self.local_clients_by_device_id: dict[str, FullyLocalClient] = {}
 
     async def _async_update_data(self) -> dict[str, FullyCloudDevice]:
-        try:
-            devices = await self.client.async_get_devices()
-        except FullyCloudError as err:
-            raise UpdateFailed(str(err)) from err
-
         normalized: dict[str, FullyCloudDevice] = {}
-        for index, payload in enumerate(devices, start=1):
-            device_id = _device_id(payload, index)
-            normalized[device_id] = _normalized_device(device_id, payload)
+
+        if self.client is not None:
+            try:
+                devices = await self.client.async_get_devices()
+            except FullyCloudError as err:
+                raise UpdateFailed(str(err)) from err
+
+            for index, payload in enumerate(devices, start=1):
+                device_id = _device_id(payload, index)
+                normalized[device_id] = _normalized_device(device_id, payload)
 
         self.local_clients_by_device_id = {}
         for index, local_client in enumerate(self.local_clients, start=1):

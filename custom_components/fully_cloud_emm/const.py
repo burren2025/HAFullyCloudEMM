@@ -10,6 +10,12 @@ CONF_API_EMAIL = "api_email"
 CONF_API_KEY = "api_key"
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_LOCAL_DEVICES = "local_devices"
+CONF_LOCAL_HOST = "local_host"
+CONF_LOCAL_PORT = "local_port"
+CONF_LOCAL_PASSWORD = "local_password"
+CONF_ENTRY_TYPE = "entry_type"
+ENTRY_TYPE_CLOUD = "cloud"
+ENTRY_TYPE_LOCAL = "local"
 
 DEFAULT_SCAN_INTERVAL = timedelta(hours=1)
 DEFAULT_SCAN_INTERVAL_SECONDS = int(DEFAULT_SCAN_INTERVAL.total_seconds())

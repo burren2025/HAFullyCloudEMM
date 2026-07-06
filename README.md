@@ -52,20 +52,19 @@ After Home Assistant restarts:
 1. Go to **Settings > Devices & services**.
 2. Click **Add Integration**.
 3. Search for **Fully Cloud EMM**.
-4. Enter your Fully Cloud account email.
-5. Enter your Fully Cloud API access token.
-6. Submit the form.
+4. Choose **Add cloud account**, **Add local device**, or **Add multiple local devices**.
 
-HACS only installs the integration files. The email/API token prompt appears when adding the integration from **Devices & services**, not during the HACS install step.
+Choose **Add cloud account** to enter your Fully Cloud account email and API access token. Once the cloud account is added, all Fully Cloud devices available to the API token are added to Home Assistant.
+
+Choose **Add local device** for a Fully Kiosk tablet reachable from Home Assistant. Enter the IP address or host name, the Remote Admin port, and the Remote Admin password. The default port is `2323`.
+
+HACS only installs the integration files. The email/API token or local device prompt appears when adding the integration from **Devices & services**, not during the HACS install step.
 
 ## Optional Local API
 
-If a Fully Kiosk device is reachable on the same network as Home Assistant, you can add its local Remote Admin endpoint from the integration options. Fully Kiosk Remote Admin commonly listens on port `2323`. Enable Remote Admin on the tablet first and use the Remote Admin password from Fully Kiosk.
+If a Fully Kiosk device is reachable on the same network as Home Assistant, you can add it directly from **Add Integration > Fully Cloud EMM > Add local device**. Fully Kiosk Remote Admin commonly listens on port `2323`. Enable Remote Admin on the tablet first and use the Remote Admin password from Fully Kiosk.
 
-1. Go to **Settings > Devices & services**.
-2. Open **Fully Cloud EMM**.
-3. Choose **Configure**.
-4. Add one local device per line.
+Cloud accounts can also add local endpoints from the integration **Configure** menu when you want cloud status plus local command routing for the same device.
 
 Examples:
 

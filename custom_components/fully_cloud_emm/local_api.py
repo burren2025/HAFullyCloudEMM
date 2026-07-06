@@ -110,6 +110,22 @@ class FullyLocalClient:
         return payload
 
 
+def format_local_device_option(host: str, port: int, password: str = "") -> str:
+    """Build one local device option line from form fields."""
+    endpoint = host.strip()
+    if not endpoint:
+        raise ValueError("local device host or IP address is empty")
+    if "://" not in endpoint:
+        endpoint = f"http://{endpoint}"
+    url = URL(endpoint)
+    if url.port is None:
+        url = url.with_port(port)
+    endpoint = str(url)
+    if password:
+        return f"{endpoint}|{password}"
+    return endpoint
+
+
 def parse_local_device_options(value: str) -> tuple[FullyLocalDeviceConfig, ...]:
     """Parse local device option lines."""
     configs: list[FullyLocalDeviceConfig] = []

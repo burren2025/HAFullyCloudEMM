@@ -35,7 +35,9 @@ from .const import (
     ATTR_URL,
     CONF_API_EMAIL,
     CONF_API_KEY,
+    CONF_ENTRY_TYPE,
     CONF_LOCAL_DEVICES,
+    ENTRY_TYPE_CLOUD,
     DOMAIN,
     PLATFORMS,
     SERVICE_LOAD_START_URL,
@@ -154,16 +156,20 @@ async def async_setup_entry(
 ) -> bool:
     """Set up Fully Cloud EMM from a config entry."""
     session = async_get_clientsession(hass)
-    client = FullyCloudClient(
-        session,
-        entry.data[CONF_API_EMAIL],
-        entry.data[CONF_API_KEY],
+    client = None
+    if entry.data.get(CONF_ENTRY_TYPE, ENTRY_TYPE_CLOUD) == ENTRY_TYPE_CLOUD:
+        client = FullyCloudClient(
+            session,
+            entry.data[CONF_API_EMAIL],
+            entry.data[CONF_API_KEY],
+        )
+
+    local_device_options = entry.options.get(
+        CONF_LOCAL_DEVICES, entry.data.get(CONF_LOCAL_DEVICES, "")
     )
     local_clients = tuple(
         FullyLocalClient(session, config)
-        for config in parse_local_device_options(
-            entry.options.get(CONF_LOCAL_DEVICES, "")
-        )
+        for config in parse_local_device_options(local_device_options)
     )
     coordinator = FullyCloudCoordinator(hass, client, local_clients)
     await coordinator.async_config_entry_first_refresh()
@@ -294,6 +300,10 @@ def _command_service_handler(
                     cloud_device_ids.discard(device_id)
 
                 if cloud_device_ids:
+                    if coordinator.client is None:
+                        raise HomeAssistantError(
+                            "Selected device is not currently reachable through the local Fully Kiosk API"
+                        )
                     results.extend(
                         await coordinator.client.async_send_command(
                             command,
@@ -313,7 +323,7 @@ def _command_service_handler(
                     _redact_message(str(err)),
                 )
                 raise HomeAssistantError(
-                    f"Fully Cloud command {command} failed: {_redact_message(str(err))}"
+                    _friendly_command_error(command, err)
                 ) from err
 
             _LOGGER.warning(
@@ -457,3 +467,19 @@ def _command_result_summary(results: list[dict]) -> str:
 def _short_log_text(value: str) -> str:
     """Return a short single-line value for logs."""
     return " ".join(value.split())[:200]
+
+
+def _friendly_command_error(command: str, err: Exception) -> str:
+    """Return a friendlier command failure message."""
+    message = _redact_message(str(err))
+    if (
+        command == "rebootDevice"
+        and "device owner" in message.lower()
+        and "root" in message.lower()
+    ):
+        return (
+            "Reboot was rejected by the tablet. Fully Kiosk needs device owner, "
+            "system app, or root privileges before Android will allow a reboot."
+        )
+
+    return f"Fully Cloud command {command} failed: {message}"

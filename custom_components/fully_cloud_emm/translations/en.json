@@ -2,21 +2,48 @@
   "config": {
     "step": {
       "user": {
-        "title": "Fully Cloud EMM",
-        "description": "Enter your Fully Cloud REST API credentials.\n\n{error_detail}",
+        "title": "Add Cloud/Local Devices",
+        "menu_options": {
+          "cloud": "Add cloud account",
+          "local": "Add local device",
+          "local_bulk": "Add multiple local devices"
+        }
+      },
+      "cloud": {
+        "title": "Add cloud account",
+        "description": "Enter your Fully Cloud REST API credentials. Once the cloud account is added, all Fully Cloud devices available to the API token are added to Home Assistant.\n\n{error_detail}",
         "data": {
           "api_email": "Fully Cloud account email",
           "api_key": "Fully Cloud API access token"
+        }
+      },
+      "local": {
+        "title": "Add local device",
+        "description": "Add one Fully Kiosk device reachable from Home Assistant. Fully Kiosk Remote Admin commonly uses port 2323.\n\n{error_detail}",
+        "data": {
+          "local_host": "IP address or host name",
+          "local_port": "Port",
+          "local_password": "Remote Admin password"
+        }
+      },
+      "local_bulk": {
+        "title": "Add multiple local devices",
+        "description": "Add one local Fully Kiosk device per line. Use ip|password, ip:port|password, devid|ip|password, or a full URL.\n\n{error_detail}",
+        "data": {
+          "local_devices": "Local devices"
         }
       }
     },
     "error": {
       "cannot_connect": "Could not connect to Fully Cloud.",
       "invalid_auth": "Fully Cloud rejected the email or API token.",
+      "invalid_local_devices": "One or more local device entries are invalid.",
+      "local_cannot_connect": "Could not connect to one or more local Fully Kiosk devices.",
+      "local_bulk_partial_failure": "Some local Fully Kiosk devices could not be reached.",
       "unknown": "Unexpected error."
     },
     "abort": {
-      "already_configured": "This Fully Cloud account is already configured."
+      "already_configured": "This Fully Cloud account or local device is already configured."
     }
   },
   "options": {
